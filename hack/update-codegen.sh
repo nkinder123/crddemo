@@ -18,23 +18,20 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-bash vendor/k8s.io/code-generator/generate-groups.sh "deepcopy,client,informer,lister" \
-crddemo/pkg/generated crddemo/pkg/apis \
-crddemo:v1alpha1 \
---output-base "$(dirname "${BASH_SOURCE[0]}")/../.." \
---go-header-file $GOPATH/src/crddemo/hack/boilerplate.go.txt
+SCRIPT_ROOT=$GOPATH/src/crddemo
+#CODEGEN_PKG=${CODEGEN_PKG:-$(cd "${SCRIPT_ROOT}"; ls -d -1 ./vendor/k8s.io/code-generator 2>/dev/null || echo ../code-generator)}
 
+source vendor/k8s.io/code-generator/kube_codegen.sh
 
+THIS_PKG="crddemo"
 
+kube::codegen::gen_helpers \
+    --boilerplate "${SCRIPT_ROOT}/hack/boilerplate.go.txt" \
+    "${SCRIPT_ROOT}/pkg/apis"
 
-
-
-#####################样例 start##################################
-#注意事项：
-#MODULE需和go.mod文件内容一致
-#"${CODEGEN_PKG}"/generate-groups.sh "deepcopy,client,informer,lister" \
-#  sample-controller/pkg/generated sample-controller/pkg/apis \
-#  samplecontroller:v1alpha1 \
-#  --output-base "$(dirname "${BASH_SOURCE[0]}")/../.." \
-#  --go-header-file "${SCRIPT_ROOT}"/hack/boilerplate.go.txt
-#####################样例 end##################################
+kube::codegen::gen_client \
+    --with-watch \
+    --output-dir "${SCRIPT_ROOT}/pkg/generated" \
+    --output-pkg "${THIS_PKG}/pkg/generated" \
+    --boilerplate "${SCRIPT_ROOT}/hack/boilerplate.go.txt" \
+    "${SCRIPT_ROOT}/pkg/apis"
